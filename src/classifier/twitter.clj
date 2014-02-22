@@ -8,20 +8,21 @@
     [clojure.data.json :as json]
     [http.async.client :as haClient]
     [classifier.config.credentials.twitter :as twitter-credentials]
-    [classifier.config.twitter :as twitter-config])
+    [classifier.config.twitter :as twitter-config]
+    [clojure.core.async :as async :refer :all])
   (:import 
     (twitter.callbacks.protocols AsyncStreamingCallback)))
   
 (defn start
   "Start to collect tweets"
-  []
+  [channel]
   (def social-impact-oauth-creds (make-oauth-creds (:api-key twitter-credentials/social-impact-keys) 
                                                    (:api-secret twitter-credentials/social-impact-keys)
                                                    (:access-token twitter-credentials/social-impact-keys)
                                                    (:access-token-secret twitter-credentials/social-impact-keys)))
   (def ^:dynamic 
     *collect-tweets*
-    (AsyncStreamingCallback. (comp println #(:text %) json/read-json #(str %2))
+    (AsyncStreamingCallback. (comp (fn [tweet] (go (>! channel (:text tweet)))) json/read-json #(str %2))
                              (comp println response-return-everything)
                              exception-print))
 
