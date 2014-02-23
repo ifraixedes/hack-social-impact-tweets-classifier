@@ -1,17 +1,14 @@
 (ns classifier.core
   (:gen-class)
-  (:use
-   [classifier twitter])
   (:require 
-    [clojure.core.async :as async :refer :all]))
+    [classifier.twitter :as twitter]
+    [classifier.categoriser :as classifier]))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Orchestrate everything to make it happens"
   [& args]
-  (println "Hello, World!")
-  (let [channel (chan)]
-                (thread (start channel))
-                (while true (println (<!! channel)))
-    ))
+  (println "Let's go!!")
+  (classifier/filtering (twitter/collect))
+  (Thread/sleep 10000))
  
 

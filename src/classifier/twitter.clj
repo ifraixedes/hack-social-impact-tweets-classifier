@@ -13,20 +13,23 @@
   (:import 
     (twitter.callbacks.protocols AsyncStreamingCallback)))
   
-(defn start
-  "Start to collect tweets"
-  [channel]
-  (def social-impact-oauth-creds (make-oauth-creds (:api-key twitter-credentials/social-impact-keys) 
-                                                   (:api-secret twitter-credentials/social-impact-keys)
-                                                   (:access-token twitter-credentials/social-impact-keys)
-                                                   (:access-token-secret twitter-credentials/social-impact-keys)))
-  (def ^:dynamic 
-    *collect-tweets*
-    (AsyncStreamingCallback. (comp (fn [tweet] (go (>! channel (:text tweet)))) json/read-json #(str %2))
-                             (comp println response-return-everything)
-                             exception-print))
+(defn collect
+ "Collect tweets and send them to channel"
+  []
+  (let [channel (chan)]
+    (thread (
+             def social-impact-oauth-creds (make-oauth-creds (:api-key twitter-credentials/social-impact-keys) 
+                                                             (:api-secret twitter-credentials/social-impact-keys)
+                                                             (:access-token twitter-credentials/social-impact-keys)
+                                                             (:access-token-secret twitter-credentials/social-impact-keys)))
+            (def ^:dynamic 
+              *collect-tweets*
+              (AsyncStreamingCallback. (comp (fn [tweet] (go (>! channel (:text tweet)))) json/read-json #(str %2))
+                                       (comp println response-return-everything)
+                                       exception-print))
 
-  (statuses-filter :params {:track (clojure.string/join "," twitter-config/hashtags)}
-                   :oauth-creds social-impact-oauth-creds
-                   :callbacks *collect-tweets*))
+            (statuses-filter :params {:track (clojure.string/join "," twitter-config/hashtags)}
+                             :oauth-creds social-impact-oauth-creds
+                             :callbacks *collect-tweets*))
+    channel))
 
