@@ -1,8 +1,17 @@
 (ns classifier.categoriser
-  (:require 
-    [classifier.config.categories :as cats]
+  (:require
     [clojure.core.async :as async :refer :all]
-    ))
+    [classifier.config.categories :as categoriesSpec]))
+
+(defn- match-to-this-category
+  [words category]
+  (if (= 0 (count (clojure.set/intersection words (:keywords category))))
+    false
+    true))
+
+(defn tokenize
+  [text]
+  (set (clojure.string/split text #"\s|\.|,")))
 
 (defn filtering
   [channel-in]
@@ -11,21 +20,14 @@
 
 (defn matched-categories
   [words categories]
-  (loop [categories]
-    (if (= 0 (count categories))
+  (defn iter
+    [categoriesLeft categories]
+    (if (= 0 (count categoriesLeft))
       []
-      (let [category (categories 0)]
+      (let [category (categoriesLeft 0)]
         (if (match-to-this-category words category)
-          (conj (recur (pop categories)) (:name category))
-          (recur (pop categories)))))))
+          (conj (iter (pop categoriesLeft)) (:name category))
+          (iter (pop categoriesLeft)))))))
 
-(defn- match-to-this-category
-  [words category]
-  (if (= 0 (count (clojure.set/intersection words (:keywords category))))
-    false
-    true)) 
 
-(defn- tokenize
-  [text]
-  (set (clojure.string/split text #"\s|\.|,")))
 
