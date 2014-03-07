@@ -1,4 +1,5 @@
 (ns classifier.categoriser
+  (:refer-clojure :exclude [map reduce into partition partition-by take merge])
   (:require
     [clojure.core.async :as async :refer :all]
     [classifier.config.categories :as categoriesSpec]))
@@ -11,7 +12,7 @@
 
 (defn tokenize
   [text]
-  (set (clojure.string/split text #"\s|\.|,")))
+  (disj (set (clojure.string/split text #"\s|\.|,")) ""))
 
 (defn filtering
   [channel-in]
@@ -28,6 +29,3 @@
         (if (match-to-this-category words category)
           (conj (iter (pop categoriesLeft)) (:name category))
           (iter (pop categoriesLeft)))))))
-
-
-
